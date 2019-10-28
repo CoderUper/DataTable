@@ -26,3 +26,7 @@ void GetCommand()
     }
     std::cout<<"再见！\n";
 }
+
+
+//对指令进行解析
+bool 

@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
-#define M 3
+#define M 2
 
 #define keyType int64_t
 

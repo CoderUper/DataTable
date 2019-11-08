@@ -21,7 +21,12 @@ BTree::~BTree()
     std::cout<<"\na BTree is destroyed!\n";
 }
 
-void BTree::store_BPlusTree(int col)
+Node* BTree::get_root()
+{
+    return root;
+}
+
+void BTree::store_BPlusTree(std::fstream &indexfile)
 {
     if(!root) return;
     //初始化队列
@@ -30,38 +35,33 @@ void BTree::store_BPlusTree(int col)
     memset(queue,0,sizeof(queue));
     int front=0,rear=0;
     queue[rear++]=root;
-    char col_c[64];
-    sprintf(col_c,"%d",col);
-    std::string col_s(col_c);
-    std::ofstream indexfile(col_s+".txt");
-    std::vector<std::string> line;
-    std::string key_line;    
     while(front<rear)
     {
         Node *p=queue[front++];
+        std::cout<<"level="<<level<<" "<<"p->level="<<p->level<<"\n";
         if(p->level!=level)
         {
-            line.clear();
-            key_line.clear();
+            level++;
+            std::cout<<"\n";
+            indexfile<<"\n";
         }
 
         std::cout<<"[";
+        indexfile<<"[";
         for(int i=0;i<p->key_num;i++)
         {
             std::cout<<p->key[i]<<" ";
-            
+            indexfile<<p->key[i]<<" ";
         }
         std::cout<<"]  ";
-        std::cout<<"key num in root is"<<p->key_num<<std::endl;
+        indexfile<<"] ";
         for(int i=0;i<p->child_num;i++)
         {
             if(!p->is_leaf)
             {
                 queue[rear++]=p->child[i];                   
-                std::cout<<p->child[i]<<" ";
             }
         }
-        std::cout<<"\n----------------\n";
     }    
 }
 
@@ -183,9 +183,9 @@ void BTree::SolveOverflow(Node* node)
         node->parent=new_root;
         new_node->parent=new_root;
         root=new_root;
-        node->level++;
-        new_node->level++;
-    }
+        update_level(node);
+        update_level(new_node);
+    } 
     //分裂点不是根节点
     else
     {
@@ -195,6 +195,17 @@ void BTree::SolveOverflow(Node* node)
         p->child_insert(pos+2,new_node);
         new_node->parent=p;
         SolveOverflow(p);
+    }
+}
+
+void BTree::update_level(Node* node)
+{
+    if(node)
+    {
+        for(int i=0;i<node->child_num;i++)
+            if(!node->is_leaf)
+                update_level(node->child[i]);
+        node->level++;
     }
 }
 

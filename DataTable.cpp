@@ -5,32 +5,33 @@
 pthread_mutex_t DataTable::instance_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t DataTable::data_rows_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t DataTable::recent_file_status_mutex=PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t DataTable::data_status_info_mutex=PTHREAD_MUTEX_INITIALIZER;
-const std::string DataTable::data_status_info_name="data_status_info.txt";
+const std::string DataTable::data_status_info_name="file_info.txt";
 const std::string DataTable::data_path="./data/";
+DataTable* DataTable::data_instance=NULL;
 DataTable::DataTable(uint _max_file_num,uint _max_file_data_rows,uint _data_rows):max_file_num(_max_file_num),max_file_data_rows(_max_file_data_rows),data_rows(_data_rows)
 {
-    memset(recent_file_status,0,sizeof(recent_file_status));
-    for(int i=0;i<max_recent_file;i++)
+    for(uint i=0;i<max_recent_file;i++)
     {
         pthread_mutex_init(&recent_file_mutex[i],NULL);
     }
-    std::string file_path=data_path+get_data_status_info_name();
-    if(access(file_path.c_str(),F_OK)==0)
+    pthread_mutex_init(&all_file_usage_mutex,NULL);
+    pthread_mutex_init(&row_status_info_mutex,NULL);
+    //初始化
+    for(uint i=0;i<max_file_num;i++)
     {
-        data_status_info.open(file_path);
+        pthread_mutex_t file_mutex=PTHREAD_MUTEX_INITIALIZER;
+        all_file_mutex.push_back(file_mutex);
+        all_file_usage_status.push_back(0);
     }
-    else
+    std::string file_info=data_path+data_status_info_name;
+    data_status_info.open(file_info,std::ios::in|std::ios::out);
+    std::string out;
+    while(data_status_info.good())
     {
-        data_status_info.open(file_path);
-        data_status_info<<0<<"\n";    //写入已经存在的文件数
-        for(int i=0;i<max_file_num;i++)
-        {
-            data_status_info<<i<<" "<<0<<"\n";
-        }
-        data_rows=0;
-        data_file_num=0;
-    }   
+        getline(data_status_info,out,' ');
+        if(out.empty())
+            file_row_info.push_back(atoi(out.c_str()));
+    }
 }
 
 uint DataTable::get_data_rows() const 
@@ -89,28 +90,9 @@ DataTable* DataTable::get_instance()
     return data_instance;
 }
 
-std::vector<DataTable::KeyType> split(const std::string& str, const std::string& delim) {  
-        std::vector<DataTable::KeyType> res;  
-        if("" == str) return res;  
-        //先将要切割的字符串从string类型转换为char*类型  
-        char * strs = new char[str.length() + 1] ; //不要忘了  
-        strcpy(strs, str.c_str());   
-                       
-        char * d = new char[delim.length() + 1];  
-        strcpy(d, delim.c_str());  
-                               
-        char *p = strtok(strs, d);  
-        while(p) {  
-            string s = p; //分割得到的字符串转换为string类型  
-            res.push_back(s); //存入结果数组  
-            p = strtok(NULL, d);  
-        }  
-                                                                   
-        return res;  
-}
 
 //查询数据
-std::vector<int>  DataTable::search(KeyType key,int col,int minimum,int maximum)
+void DataTable::search(int col,int minimum,int maximum)
 {
     //查看是否为这列建立索引
     //如果有，用B+树搜索
@@ -119,15 +101,45 @@ std::vector<int>  DataTable::search(KeyType key,int col,int minimum,int maximum)
     //最近打开文件没有搜索到，搜索
 }
 
-//向某一列插入一行数据
-void DataTable::insert(std::vector<KeyType> row)
+//向某一文件插入数据
+void DataTable::insert(std::vector<KeyType>& keys)
 {
-    //先找最近打开文件
-    lock(&recent_file_mutex);
-    for(int i=0;i<max_recent_file;i++)
+    //确定要插入的文件
+    //临界资源互斥访问
+    if(keys.empty())
     {
-        if(recent_file_status[i]&&)
+        std::cout<<"data is empty\n";
+        return;
     }
-    //若没满，被占用则插入
-    //若满了，或者被占用则插入磁盘中的文件
+    int file=0;
+    lock(&row_status_info_mutex);
+    while(file_row_info[file]>=max_file_num&&file<max_file_num) file++;
+    if(file==max_file_num)
+    {
+        std::cout<<"所有文件已满；\n";
+        unlock(&row_status_info_mutex);
+        return;
+    }
+    else
+    {
+        lock(&all_file_mutex[file]);
+        file++;
+    }
+    unlock(&row_status_info_mutex);
+    char file_name[64];
+    sprintf(file_name,"%d.txt",file);
+    std::string filename(file_name);
+    filename=data_path+filename;
+    std::fstream outfile(filename,std::ios::app|std::ios::out);
+    for(auto it=keys.begin();it!=keys.end();it++)
+    {
+        outfile<<*it<<" ";
+    }
+    outfile<<"\n";
+    std::cout<<"插入成功！\n";    outfile.close();
+    unlock(&all_file_mutex[file-1]);
+    
 }
+
+
+

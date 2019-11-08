@@ -1,6 +1,7 @@
 #include "BTree.h"
 #include <ctime>
 #include <vector>
+#include <fstream>
 std::vector<keyType> key_list;
 #define random(x) rand()%(x)
 
@@ -23,7 +24,11 @@ int main()
         n++;
     }
     std::cout<<"key num is "<<bt.get_num()<<std::endl;
-    bt.bfs_print();
+    std::string path("1.txt");
+    std::ofstream indexfile(path);
+    //bt.bfs_print();
+    bt.store_BPlusTree(indexfile);
+    indexfile.close();
 //    bt.remove(58);
 /*
     for(int i=0;i<count;i++){

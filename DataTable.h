@@ -8,6 +8,7 @@
 #include <fstream>
 #include <climits>
 #include <cstring>
+#include "./BPlusTree/BTree.h"
 class DataTable
 {
 public:
@@ -22,16 +23,17 @@ public:
     uint get_data_file_num() const;
     static DataTable* get_instance();
     static void instance_mutex_init();
-    
+    void create_index();
     void search(int col=0,int minimum=LONG_MIN,int maximum=LONG_MAX);
     void insert(std::vector<KeyType>& keys);
-
+    
 private:
+    BTree* bt;    //B+树索引
     static void lock(pthread_mutex_t* mutex);
     static void unlock(pthread_mutex_t* mutex);   
     
     static const std::string data_path;
-
+    const std::string index_path="./IndexFile/";
     const uint max_rows=1000000;   //最大数据量
     const uint max_file_num;  //最大文件数
     const uint max_file_data_rows;   //每个文件最大数据量

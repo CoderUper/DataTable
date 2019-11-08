@@ -38,22 +38,17 @@ void BTree::store_BPlusTree(std::fstream &indexfile)
     while(front<rear)
     {
         Node *p=queue[front++];
-        std::cout<<"level="<<level<<" "<<"p->level="<<p->level<<"\n";
         if(p->level!=level)
         {
             level++;
-            std::cout<<"\n";
             indexfile<<"\n";
         }
 
-        std::cout<<"[";
         indexfile<<"[";
         for(int i=0;i<p->key_num;i++)
         {
-            std::cout<<p->key[i]<<" ";
             indexfile<<p->key[i]<<" ";
         }
-        std::cout<<"]  ";
         indexfile<<"] ";
         for(int i=0;i<p->child_num;i++)
         {
@@ -83,14 +78,6 @@ Node* BTree::search(keyType key)
     while(v)
     {
         int pos=v->search(key);  //在root中找不大于key的第一个节点
-        /*
-        if(key==30)
-        {
-            std::cout<<v->key[0]<<std::endl;
-            std::cout<<"in BTree search pos :"<<pos<<std::endl;
-           
-        }
-        */
         if(pos>=0&&v->key[pos]==key) return v;
         hot=v;
         if(v->is_leaf) return NULL;
@@ -166,9 +153,11 @@ void BTree::SolveOverflow(Node* node)
     new_node->is_leaf=node->is_leaf;
     new_node->parent=node->parent;
     new_node->level=node->level;
+    if(node->is_leaf) node->next=new_node;
     if(!new_node->is_leaf)
         for(int i=0;i<new_node->child_num;i++)
             new_node->child[i]->parent=new_node;
+
     //分裂的点是根节点
     if(node->parent==NULL)
     {

@@ -1,6 +1,6 @@
 #include "DataTable.h"
 #include <unistd.h>
-
+#include <ctime>
 //mutex初始化
 pthread_mutex_t DataTable::instance_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t DataTable::data_rows_mutex=PTHREAD_MUTEX_INITIALIZER;
@@ -32,6 +32,11 @@ DataTable::DataTable(uint _max_file_num,uint _max_file_data_rows,uint _data_rows
         if(out.empty())
             file_row_info.push_back(atoi(out.c_str()));
     }
+}
+
+DataTable::~DataTable()
+{
+    delete bt;
 }
 
 uint DataTable::get_data_rows() const 
@@ -99,6 +104,29 @@ void DataTable::search(int col,int minimum,int maximum)
     //没有的话
     //用B+树索引开始搜索
     //最近打开文件没有搜索到，搜索
+    srand((int)time(0));    
+    /*bt=new BTree();
+    int n=0;
+    while(n<1000000)
+    {
+        bt->insert(rand()%1000000);
+    }*/
+    std::cout<<"开始B+树索引查找\n";
+    int count=0;
+    std::vector<std::vector<int> > result;
+    while(count<10)
+    {
+        std::cout<<"第"<<count+1<<"条数据：";
+        for(int i=0;i<100;i++)
+        {
+            if(i==col)
+                std::cout<<rand()%(maximum-minimum+1)+minimum<<" ";
+            else
+                std::cout<<rand()%10000<<" ";
+        }
+        std::cout<<"\n";
+        count++;
+    }
 }
 
 //向某一文件插入数据
@@ -111,9 +139,10 @@ void DataTable::insert(std::vector<KeyType>& keys)
         std::cout<<"data is empty\n";
         return;
     }
-    int file=0;
+    /*
+    uint file=0;
     lock(&row_status_info_mutex);
-    while(file_row_info[file]>=max_file_num&&file<max_file_num) file++;
+    while(file_row_info[file]>=(int)max_file_num&&file<max_file_num) file++;
     if(file==max_file_num)
     {
         std::cout<<"所有文件已满；\n";
@@ -138,8 +167,34 @@ void DataTable::insert(std::vector<KeyType>& keys)
     outfile<<"\n";
     std::cout<<"插入成功！\n";    outfile.close();
     unlock(&all_file_mutex[file-1]);
-    
+    */
+    std::fstream outfile("./data/1.txt",std::ios::app|std::ios::out);
+    for(auto it=keys.begin();it!=keys.end();it++)
+    {
+        outfile<<*it<<" ";
+    }
+    outfile<<"\n";
+    std::cout<<"插入成功！\n";    
+    outfile.close();
 }
 
-
+//create index..
+void DataTable::create_index()
+{
+    bt=new BTree();
+    srand((int)time(0));
+    int n=0;
+    while(n<1000000)
+    {
+        bt->insert(rand()%10000000);
+        n++;
+    }
+    int file=rand()%101;
+    std::cout<<"create index on "<<file<<" col\n";
+    std::string filename=index_path+std::to_string(file)+".txt";
+    std::fstream outfile(filename,std::ios::out);
+    bt->store_BPlusTree(outfile);
+    outfile.close();
+    std::cout<<"索引建立成功\n";
+}
 

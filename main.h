@@ -10,10 +10,10 @@ public:
     void Menu();
     void GetCommand();
     void OperatorOnTable(std::string);
-    
 private:
     void search();
     void insert();
+    void create_index();
     DataTable* dt;
     DataSource *ds;
 };

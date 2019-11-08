@@ -12,7 +12,8 @@ pthread_mutex_t mutex;
 void* insert_to_file(void* filename)
 {
     srand((int)(time(0)));
-    string file=path+(char*)filename+".txt";
+    int file_name=*((int*)filename);
+    string file=path+to_string(file_name)+".txt";
     ofstream out(file);
     vector<string> datas;
     for(int i=0;i<1000;i++)
@@ -26,17 +27,15 @@ void* insert_to_file(void* filename)
         out<<line<<"\n";
     }
     out.close();
-    pthread_mutex_lock(&mutex);
-    cout<<pid++<<"thread finished\n";
-    pthread_mutex_unlock(&mutex);
+    cout<<"thread id:"<<pthread_self()<<"finished\n";
     return NULL;
 }
 
 int main()
 {
     pthread_mutex_init(&mutex,NULL);
-    pthread_t pids[1000];
-    int filename[10001];
+    pthread_t pids[1001];
+    int filename[1001];
     for(int i=1;i<=1000;i++)
     {
         filename[i]=i;

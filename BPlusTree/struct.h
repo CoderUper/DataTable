@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
-#define M 2
+#define M 5
 
 #define keyType int64_t
 
@@ -14,6 +14,7 @@ struct Node{
     bool is_leaf;
     int file_index[2];//0.文件名。2.行数
     int level;
+    Node* next;
     Node()
     {
         key_num=0;
@@ -24,6 +25,7 @@ struct Node{
         parent=NULL;
         is_leaf=true;
         level=1;
+        next=NULL;
     }
     int search(keyType e)
     {

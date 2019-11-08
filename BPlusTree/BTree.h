@@ -11,8 +11,9 @@ public:
     void bfs_print();
     int get_num();
     bool insert(keyType key);
-private:
     Node* search(keyType key);
+private:
+    
     Node* create_node();
     
     bool remove(keyType key);

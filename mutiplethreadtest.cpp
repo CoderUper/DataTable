@@ -5,6 +5,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <vector>
+#include <sys/syscall.h>
 using namespace std;
 string path="./data/";
 int pid=1;
@@ -22,12 +23,14 @@ void* insert_to_file(void* filename)
         line.clear();
         for(int j=0;j<100;j++)
         {
-            line=line+to_string(rand()%10000)+" ";
+            line=line+to_string(rand()%100001)+" ";
         }
         out<<line<<"\n";
     }
     out.close();
-    cout<<"thread id:"<<pthread_self()<<"finished\n";
+    pthread_mutex_lock(&mutex);
+    cout<<"thread "<<pid++<<"is finished!\n";
+    pthread_mutex_unlock(&mutex);
     return NULL;
 }
 
@@ -39,8 +42,11 @@ int main()
     for(int i=1;i<=1000;i++)
     {
         filename[i]=i;
-        pthread_create(&pids[i],NULL,insert_to_file,(void*)&filename[i]);
-        pthread_detach(pids[i]);
+    }
+    for(int i=1;i<1001;i++)
+    {
+       pthread_create(&pids[i],NULL,insert_to_file,(void*)(&filename[i]));
+       pthread_join(pids[i],NULL);
     }
     return 0;
 }
